@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  drawer:
+    image: harryhsu4/object-detection-classifier:latest
+    restart: always
+    ports:
+    - 1000:1000
+    volumes:
+    - ./config.js:/work/api/config.js
+    - ./data:/work/data
+    entrypoint: "node app"
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
