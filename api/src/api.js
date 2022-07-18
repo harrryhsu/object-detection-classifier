@@ -47,7 +47,9 @@ const getAllFiles = function (
 };
 
 const ensureDir = (_path) =>
-  !fs.existsSync(_path) && fs.mkdirSync(_path, { recursive: true });
+  !fs.existsSync(_path) &&
+  fs.mkdirSync(path.dirname(_path), { recursive: true });
+
 const ext = (_path, ext) =>
   path.format({ ...path.parse(_path), base: "", ext });
 
@@ -112,6 +114,9 @@ module.exports = (app) => {
     const targetImagePath = path.join(page.target, "image", file);
     const targetLabelPath = path.join(page.target, "label", ext(file, ".txt"));
 
+    ensureDir(targetImagePath);
+    ensureDir(targetLabelPath);
+
     const label = data
       .map((d) => mapDefault(mapDataFormat(d), page.default))
       .map(
@@ -132,6 +137,7 @@ module.exports = (app) => {
     const sourcePath = path.join(page.source, file);
     const ignorePath = path.join(page.ignore, file);
 
+    ensureDir(ignorePath);
     fs.renameSync(sourcePath, ignorePath);
 
     return okay(res);
