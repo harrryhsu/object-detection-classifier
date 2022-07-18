@@ -1,5 +1,6 @@
-all: build-web build-api build-docker
+all: build deploy
 bootstrap: npm-bootstrap
+build: build-web build-api build-docker
 deploy: 
 	docker push harryhsu4/object-detection-classifier:latest
 build-docker: 
