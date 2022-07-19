@@ -13,11 +13,12 @@ export default function Text(props) {
     value,
     margin = 2,
     disabled,
-    numeric,
+    numeric = false,
     ...rest
   } = props;
 
   if (value == null) value = numeric ? 0 : "";
+  if (numeric) value = parseFloat(value);
 
   return (
     <InputStyle {...props}>

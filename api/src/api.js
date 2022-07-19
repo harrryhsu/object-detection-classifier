@@ -71,7 +71,7 @@ const mapDefault = (data, def) =>
     {}
   );
 
-const mapDataFormat = ({ addition, data: [{ x, y }, width, height] }) => ({
+const shapeToObject = ({ addition, data: [{ x, y }, width, height] }) => ({
   type: addition.type,
   truncated: addition.truncated,
   occluded: addition.occluded,
@@ -83,6 +83,28 @@ const mapDataFormat = ({ addition, data: [{ x, y }, width, height] }) => ({
   score: addition.score,
 });
 
+const objectToLabel = (d) =>
+  `${d.type} ${d.truncated} ${d.occluded} ${d.alpha} ${d.bbox[0]} ${d.bbox[1]} ${d.bbox[2]} ${d.bbox[3]} ${d.dimensions[0]} ${d.dimensions[1]} ${d.dimensions[2]} ${d.location[0]} ${d.location[1]} ${d.location[2]} ${d.rotation_y} ${d.score}`;
+
+const labelProp = {
+  bbox: 4,
+  dimensions: 3,
+  location: 3,
+};
+
+const labelToObject = (label, format) => {
+  const seg = label.split(" ");
+  return format.reduce(
+    (acc, v) => ({
+      ...acc,
+      [v]: labelProp.hasOwnProperty(v)
+        ? seg.splice(0, labelProp[v])
+        : seg.shift(),
+    }),
+    {}
+  );
+};
+
 module.exports = (app) => {
   app.get("/api/metadata", (req, res) => {
     return okay(res, config);
@@ -91,9 +113,27 @@ module.exports = (app) => {
   app.get("/api/list", (req, res) => {
     const { id } = req.query;
     const page = config.page[parseInt(id)];
-    const files = getAllFiles(page.source).map((x) =>
-      path.relative(page.source, x)
-    );
+    const files = getAllFiles(page.source.image, page.search, 50).map((x) => {
+      const relativePath = path.relative(page.source.image, x);
+      let labels = [];
+      if (page.source.label) {
+        const labelPath = path.join(
+          page.source.label,
+          ext(relativePath, ".txt")
+        );
+        if (fs.existsSync(labelPath)) {
+          const rawLabel = fs.readFileSync(labelPath).toString();
+          labels = rawLabel
+            .split("\n")
+            .filter((x) => x != "")
+            .map((x) => labelToObject(x, page.source.labelFormat));
+        }
+      }
+      return {
+        path: relativePath,
+        data: labels,
+      };
+    });
 
     return okay(res, files);
   });
@@ -101,7 +141,7 @@ module.exports = (app) => {
   app.get("/api/image", (req, res) => {
     const { imagePath, id } = req.query;
     const page = config.page[parseInt(id)];
-    const sourcePath = path.join(page.source, imagePath);
+    const sourcePath = path.join(page.source.image, imagePath);
     const data = fs.readFileSync(sourcePath);
 
     return res.status(200).contentType("image/jpg").send(data);
@@ -110,7 +150,7 @@ module.exports = (app) => {
   app.post("/api/submit", (req, res) => {
     const { id, data, file } = req.body;
     const page = config.page[parseInt(id)];
-    const sourcePath = path.join(page.source, file);
+    const sourceImagePath = path.join(page.source.image, file);
     const targetImagePath = path.join(page.target, "image", file);
     const targetLabelPath = path.join(page.target, "label", ext(file, ".txt"));
 
@@ -118,15 +158,17 @@ module.exports = (app) => {
     ensureDir(targetLabelPath);
 
     const label = data
-      .map((d) => mapDefault(mapDataFormat(d), page.default))
-      .map(
-        (d) =>
-          `${d.type} ${d.truncated} ${d.occluded} ${d.alpha} ${d.bbox[0]} ${d.bbox[1]} ${d.bbox[2]} ${d.bbox[3]} ${d.dimensions[0]} ${d.dimensions[1]} ${d.dimensions[2]} ${d.location[0]} ${d.location[1]} ${d.location[2]} ${d.rotation_y} ${d.score}`
-      )
+      .map((d) => mapDefault(shapeToObject(d), page.default))
+      .map(objectToLabel)
       .join("\n");
 
-    fs.renameSync(sourcePath, targetImagePath);
+    fs.renameSync(sourceImagePath, targetImagePath);
     fs.writeFileSync(targetLabelPath, label);
+
+    if (page.source.label) {
+      const sourceLabelPath = path.join(page.source.label, ext(file, ".txt"));
+      fs.unlinkSync(sourceLabelPath);
+    }
 
     return okay(res);
   });
@@ -134,11 +176,22 @@ module.exports = (app) => {
   app.post("/api/ignore", (req, res) => {
     const { id, file } = req.body;
     const page = config.page[parseInt(id)];
-    const sourcePath = path.join(page.source, file);
-    const ignorePath = path.join(page.ignore, file);
 
-    ensureDir(ignorePath);
-    fs.renameSync(sourcePath, ignorePath);
+    const sourceImagePath = path.join(page.source.image, file);
+    const ignoreImagePath = path.join(page.ignore, "image", file);
+    ensureDir(ignoreImagePath);
+    fs.renameSync(sourceImagePath, ignoreImagePath);
+
+    if (page.source.label) {
+      const sourceLabelPath = path.join(page.source.label, ext(file, ".txt"));
+      const ignoreLabelPath = path.join(
+        page.ignore,
+        "label",
+        ext(file, ".txt")
+      );
+      ensureDir(ignoreLabelPath);
+      fs.renameSync(sourceLabelPath, ignoreLabelPath);
+    }
 
     return okay(res);
   });

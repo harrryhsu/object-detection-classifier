@@ -31,11 +31,11 @@ export default function Drawer(props) {
     UtilContext
   );
   const [shapeData, setShapeData, shapeDataRef] = useState([]);
-  const [images, setImage] = useState([]);
+  const [images, setImage, imageRef] = useState([]);
   const [onAdd, setOnAdd] = useState(false);
   const [empty, setEmpty] = useState(false);
   const [currentDrawing, setCurrentDrawing, currentDrawingRef] = useState(null);
-  const currentImage = images[0];
+  const currentImage = images[0]?.path;
   const setDataAux = (i) => (entry) => {
     setShapeData([
       ...shapeData.slice(0, i),
@@ -74,14 +74,33 @@ export default function Drawer(props) {
   };
 
   useEffect(() => {
-    if (!empty && images.length == 0)
+    if (!empty && images.length == 0) {
       api
         .GetList()
         .then((res) => {
           if (res.length === 0) setEmpty(true);
-          else setImage(res);
+          setImage(
+            res.map(({ path, data }) => {
+              return {
+                path: path,
+                data: data.map(({ bbox, ...rest }) => ({
+                  addition: rest,
+                  data: [
+                    { x: parseInt(bbox[0]), y: parseInt(bbox[1]) },
+                    bbox[2] - bbox[0],
+                    bbox[3] - bbox[1],
+                  ],
+                  key: "rect",
+                  id: uuidv4(),
+                })),
+              };
+            })
+          );
         })
         .catch(setError);
+    } else if (images.length != 0) {
+      setShapeData(images[0].data);
+    }
   }, [images]);
 
   useEffect(() => {

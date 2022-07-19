@@ -34,11 +34,10 @@ export default function Form(props) {
       (acc, key) => ({ ...acc, [key]: mapFieldDefault(config[key]) }),
       {}
     ),
-    existingForm,
+    ...existingForm,
   });
   const [anchor, setAnchor, anchorRef] = useState(null);
   const { t } = useContext(UtilContext);
-
   const defaultForm = () =>
     Object.keys(config)
       .map((key) => ({ key, config: config[key] }))
