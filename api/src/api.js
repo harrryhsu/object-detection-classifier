@@ -113,27 +113,29 @@ module.exports = (app) => {
   app.get("/api/list", (req, res) => {
     const { id } = req.query;
     const page = config.page[parseInt(id)];
-    const files = getAllFiles(page.source.image, page.search, 50).map((x) => {
-      const relativePath = path.relative(page.source.image, x);
-      let labels = [];
-      if (page.source.label) {
-        const labelPath = path.join(
-          page.source.label,
-          ext(relativePath, ".txt")
-        );
-        if (fs.existsSync(labelPath)) {
-          const rawLabel = fs.readFileSync(labelPath).toString();
-          labels = rawLabel
-            .split("\n")
-            .filter((x) => x != "")
-            .map((x) => labelToObject(x, page.source.labelFormat));
+    const files = getAllFiles(page.source.image, page.search ?? "", 50).map(
+      (x) => {
+        const relativePath = path.relative(page.source.image, x);
+        let labels = [];
+        if (page.source.label) {
+          const labelPath = path.join(
+            page.source.label,
+            ext(relativePath, ".txt")
+          );
+          if (fs.existsSync(labelPath)) {
+            const rawLabel = fs.readFileSync(labelPath).toString();
+            labels = rawLabel
+              .split("\n")
+              .filter((x) => x != "")
+              .map((x) => labelToObject(x, page.source.labelFormat));
+          }
         }
+        return {
+          path: relativePath,
+          data: labels,
+        };
       }
-      return {
-        path: relativePath,
-        data: labels,
-      };
-    });
+    );
 
     return okay(res, files);
   });
