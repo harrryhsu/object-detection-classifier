@@ -105,6 +105,20 @@ const labelToObject = (label, format) => {
   );
 };
 
+const scaleUp = (label, size) => [
+  label[0] * size[0],
+  label[1] * size[1],
+  label[2] * size[0],
+  label[3] * size[1],
+];
+
+const scaleDown = (label, size) => [
+  label[0] / size[0],
+  label[1] / size[1],
+  label[2] / size[0],
+  label[3] / size[1],
+];
+
 module.exports = (app) => {
   app.get("/api/metadata", (req, res) => {
     return okay(res, config);
@@ -128,6 +142,10 @@ module.exports = (app) => {
               .split("\n")
               .filter((x) => x != "")
               .map((x) => labelToObject(x, page.source.labelFormat));
+            console.log(labels);
+            labels.forEach(
+              (label) => (label.bbox = scaleDown(label.bbox, page.screenSize))
+            );
           }
         }
         return {
@@ -161,6 +179,10 @@ module.exports = (app) => {
 
     const label = data
       .map((d) => mapDefault(shapeToObject(d), page.default))
+      .map((x) => {
+        x.bbox = scaleUp(x.bbox, page.screenSize);
+        return x;
+      })
       .map(objectToLabel)
       .join("\n");
 

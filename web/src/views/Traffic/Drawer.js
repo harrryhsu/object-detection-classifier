@@ -16,17 +16,38 @@ import Form from "components/Form";
 
 import EmptyImage from "assets/img/empty.png";
 
-function uuidv4() {
+const uuidv4 = () => {
   return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
     (
       c ^
       (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))
     ).toString(16)
   );
-}
+};
+
+const SCREEN_SIZE = [1280, 720];
+
+const apply = ({ data: [{ x, y }, width, height], ...rest }, opx, opy) => ({
+  ...rest,
+  data: [{ x: opx(x), y: opy(y) }, opx(width), opy(height)],
+});
+
+const scaleUp = (data) =>
+  apply(
+    data,
+    (x) => x * SCREEN_SIZE[0],
+    (y) => y * SCREEN_SIZE[1]
+  );
+
+const scaleDown = (data) =>
+  apply(
+    data,
+    (x) => x / SCREEN_SIZE[0],
+    (y) => y / SCREEN_SIZE[1]
+  );
 
 export default function Drawer(props) {
-  const { screenSize, id, form } = props;
+  const { id, form } = props;
   const { setError, setSuccess, api, setDialogSrc, t } = useContext(
     UtilContext
   );
@@ -73,6 +94,8 @@ export default function Drawer(props) {
     setOnAdd(false);
   };
 
+  console.log(currentImage, shapeData);
+
   useEffect(() => {
     if (!empty && images.length == 0) {
       api
@@ -80,21 +103,21 @@ export default function Drawer(props) {
         .then((res) => {
           if (res.length === 0) setEmpty(true);
           setImage(
-            res.map(({ path, data }) => {
-              return {
-                path: path,
-                data: data.map(({ bbox, ...rest }) => ({
+            res.map(({ path, data }) => ({
+              path: path,
+              data: data
+                .map(({ bbox, ...rest }) => ({
                   addition: rest,
                   data: [
-                    { x: parseInt(bbox[0]), y: parseInt(bbox[1]) },
+                    { x: parseFloat(bbox[0]), y: parseFloat(bbox[1]) },
                     bbox[2] - bbox[0],
                     bbox[3] - bbox[1],
                   ],
                   key: "rect",
                   id: uuidv4(),
-                })),
-              };
-            })
+                }))
+                .map(scaleUp),
+            }))
           );
         })
         .catch(setError);
@@ -123,16 +146,16 @@ export default function Drawer(props) {
         <GridItem xs={12} sm={12} md={12} id="traffic-container">
           <div style={{ position: "relative", margin: "50px auto 20px auto" }}>
             <img
-              width={screenSize[0]}
-              height={screenSize[1]}
+              width={SCREEN_SIZE[0]}
+              height={SCREEN_SIZE[1]}
               src={
                 images.length === 0 ? EmptyImage : api.GetImageSrc(currentImage)
               }
             />
             <Stage
               id="test"
-              width={screenSize[0]}
-              height={screenSize[1]}
+              width={SCREEN_SIZE[0]}
+              height={SCREEN_SIZE[1]}
               style={{
                 position: "absolute",
                 margin: "auto",
@@ -230,8 +253,9 @@ export default function Drawer(props) {
               }}
               disabled={empty}
               onClick={() => {
+                const data = shapeDataRef.current.map(scaleDown);
                 api
-                  .Submit({ file: currentImage, data: shapeDataRef.current })
+                  .Submit({ file: currentImage, data })
                   .then(next)
                   .catch(setError);
               }}
