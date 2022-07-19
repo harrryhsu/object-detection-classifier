@@ -8,6 +8,7 @@ module.exports = {
       target: "/work/data/origin/target",
       ignore: "/work/data/origin/ignore",
       search: "",
+      screenSize: [1920, 1080],
       default: {
         type: "person",
         truncated: 0.0,
@@ -20,7 +21,6 @@ module.exports = {
         score: 1,
       },
       props: {
-        screenSize: [1280, 720],
         form: {
           type: {
             type: "select",
@@ -88,6 +88,7 @@ module.exports = {
       target: "/work/data/existing/target",
       ignore: "/work/data/existing/ignore",
       search: "",
+      screenSize: [1920, 1080],
       default: {
         type: "person",
         truncated: 0.0,
@@ -100,7 +101,6 @@ module.exports = {
         score: 1,
       },
       props: {
-        screenSize: [1280, 720],
         form: {
           type: {
             type: "select",
