@@ -3,12 +3,11 @@ module.exports = {
     {
       title: "Test",
       source: {
-        image: "C:/Users/qspia/Downloads/tcopy/image",
+        image: "C:/Users/qspia/Downloads/origin/source",
       },
       target: "./data/test/target",
       ignore: "./data/test/ignore",
       search: "",
-      screenSize: [1280, 720],
       default: {
         type: "person",
         truncated: 0.0,
@@ -71,8 +70,8 @@ module.exports = {
     {
       title: "Test Reprocess",
       source: {
-        image: "C:/Users/qspia/Downloads/tcopy/image",
-        label: "C:/Users/qspia/Downloads/tcopy/label",
+        image: "C:/Users/qspia/Downloads/origin/source/image",
+        label: "C:/Users/qspia/Downloads/origin/source/label",
         labelFormat: [
           "type",
           "truncated",
@@ -88,7 +87,6 @@ module.exports = {
       target: "./data/testr/target",
       ignore: "./data/testr/ignore",
       search: "",
-      screenSize: [1920, 1080],
       default: {
         type: "person",
         truncated: 0.0,

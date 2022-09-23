@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const config = require("./config");
+const sizeOf = require("image-size");
 
 const okay = (res, data) => {
   res.contentType("application/json").status(200).send({
@@ -138,12 +139,18 @@ module.exports = (app) => {
           );
           if (fs.existsSync(labelPath)) {
             const rawLabel = fs.readFileSync(labelPath).toString();
+            const dimensions = sizeOf(x);
+
             labels = rawLabel
               .split("\n")
               .filter((x) => x != "")
               .map((x) => labelToObject(x, page.source.labelFormat));
             labels.forEach(
-              (label) => (label.bbox = scaleDown(label.bbox, page.screenSize))
+              (label) =>
+                (label.bbox = scaleDown(label.bbox, [
+                  dimensions.width,
+                  dimensions.height,
+                ]))
             );
           }
         }
@@ -172,6 +179,7 @@ module.exports = (app) => {
     const sourceImagePath = path.join(page.source.image, file);
     const targetImagePath = path.join(page.target, "image", file);
     const targetLabelPath = path.join(page.target, "label", ext(file, ".txt"));
+    const dimensions = sizeOf(sourceImagePath);
 
     ensureDir(targetImagePath);
     ensureDir(targetLabelPath);
@@ -179,7 +187,7 @@ module.exports = (app) => {
     const label = data
       .map((d) => mapDefault(shapeToObject(d), page.default))
       .map((x) => {
-        x.bbox = scaleUp(x.bbox, page.screenSize);
+        x.bbox = scaleUp(x.bbox, [dimensions.width, dimensions.height]);
         return x;
       })
       .map(objectToLabel)
