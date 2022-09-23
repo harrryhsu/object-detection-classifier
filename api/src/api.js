@@ -84,7 +84,7 @@ const shapeToObject = ({ addition, data: [{ x, y }, width, height] }) => ({
 });
 
 const objectToLabel = (d) =>
-  `${d.type} ${d.truncated} ${d.occluded} ${d.alpha} ${d.bbox[0]} ${d.bbox[1]} ${d.bbox[2]} ${d.bbox[3]} ${d.dimensions[0]} ${d.dimensions[1]} ${d.dimensions[2]} ${d.location[0]} ${d.location[1]} ${d.location[2]} ${d.rotation_y} ${d.score}`;
+  `${d.type} ${d.truncated} ${d.occluded} ${d.alpha} ${d.bbox[0]} ${d.bbox[1]} ${d.bbox[2]} ${d.bbox[3]} ${d.dimensions[0]} ${d.dimensions[1]} ${d.dimensions[2]} ${d.location[0]} ${d.location[1]} ${d.location[2]} ${d.rotation_y}`;
 
 const labelProp = {
   bbox: 4,
@@ -142,7 +142,6 @@ module.exports = (app) => {
               .split("\n")
               .filter((x) => x != "")
               .map((x) => labelToObject(x, page.source.labelFormat));
-            console.log(labels);
             labels.forEach(
               (label) => (label.bbox = scaleDown(label.bbox, page.screenSize))
             );
