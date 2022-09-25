@@ -94,8 +94,6 @@ export default function Drawer(props) {
     setOnAdd(false);
   };
 
-  console.log(currentImage, shapeData);
-
   useEffect(() => {
     if (!empty && images.length == 0) {
       api
@@ -177,10 +175,8 @@ export default function Drawer(props) {
               onMouseMove={(e) => {
                 const currentDrawing = currentDrawingRef.current;
                 if (currentDrawing) {
-                  const x = e.evt.offsetX;
-                  const y = e.evt.offsetY;
-                  const px = currentDrawing.data[0].x;
-                  const py = currentDrawing.data[0].y;
+                  var { offsetX: nx, offsetY: ny } = e.evt;
+                  var { x: px, y: py } = currentDrawing.data[0];
                   setCurrentDrawing({
                     ...currentDrawing,
                     data: [
@@ -188,8 +184,8 @@ export default function Drawer(props) {
                         x: px,
                         y: py,
                       },
-                      x - px,
-                      y - py,
+                      nx - px,
+                      ny - py,
                     ],
                   });
                 }
