@@ -90,5 +90,6 @@ export const ApiWrapper = () => {
       `${baseUrl}/api/image?${buildQuery({ id, imagePath })}`,
     Submit: (body) => post("submit", { ...body, id }),
     Ignore: (body) => post("ignore", { ...body, id }),
+    Rewind: (body) => post("rewind", { ...body, id }),
   };
 };

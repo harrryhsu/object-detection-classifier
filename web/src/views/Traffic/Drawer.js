@@ -8,6 +8,7 @@ import { UtilContext } from "context/UtilContext";
 import AddIcon from "@material-ui/icons/Add";
 import ArrowUpwardIcon from "@material-ui/icons/ArrowUpward";
 import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
+import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import { Fab, Tooltip } from "@material-ui/core";
 import { DetectionRect } from "./Shape";
 
@@ -56,6 +57,7 @@ export default function Drawer(props) {
   const [onAdd, setOnAdd] = useState(false);
   const [empty, setEmpty] = useState(false);
   const [currentDrawing, setCurrentDrawing, currentDrawingRef] = useState(null);
+  const [submitted, setSubmitted, submittedRef] = useState([]);
   const currentImage = images[0]?.path;
   const setDataAux = (i) => (entry) => {
     setShapeData([
@@ -120,7 +122,7 @@ export default function Drawer(props) {
         })
         .catch(setError);
     } else if (images.length != 0) {
-      setShapeData(images[0].data);
+      setShapeData(images[0].data ?? []);
     }
   }, [images]);
 
@@ -192,7 +194,7 @@ export default function Drawer(props) {
               }}
             >
               <Layer>
-                {shapeDataRef.current
+                {shapeData
                   .concat(currentDrawing ? [currentDrawing] : [])
                   .map((entry, i) => {
                     return (
@@ -208,6 +210,32 @@ export default function Drawer(props) {
                   })}
               </Layer>
             </Stage>
+            <Fab
+              color="primary"
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                right: "260px",
+              }}
+              disabled={submitted.length === 0}
+              onClick={() => {
+                const last = submittedRef.current[0];
+                api
+                  .Rewind({ file: last.currentImage, type: last.type })
+                  .then(() => {
+                    const data = last.data.map(scaleUp);
+                    setSubmitted(([, ...x]) => x);
+                    setImage((x) => [{ path: last.currentImage, data }, ...x]);
+                    setShapeData(data);
+                    setOnAdd(false);
+                  })
+                  .catch(setError);
+              }}
+            >
+              <Tooltip title={t("Rewind")}>
+                <ArrowBackIcon />
+              </Tooltip>
+            </Fab>
             <Fab
               color="primary"
               style={{
@@ -233,7 +261,22 @@ export default function Drawer(props) {
               }}
               disabled={empty}
               onClick={() => {
-                api.Ignore({ file: currentImage }).then(next).catch(setError);
+                api
+                  .Ignore({ file: currentImage })
+                  .then(() => {
+                    setSubmitted((x) =>
+                      [
+                        {
+                          currentImage,
+                          data: shapeDataRef.current,
+                          type: "ignore",
+                        },
+                        ...x,
+                      ].filter((_, i) => i < 50)
+                    );
+                    next();
+                  })
+                  .catch(setError);
               }}
             >
               <Tooltip title={t("Ignore")}>
@@ -252,7 +295,19 @@ export default function Drawer(props) {
                 const data = shapeDataRef.current.map(scaleDown);
                 api
                   .Submit({ file: currentImage, data })
-                  .then(next)
+                  .then(() => {
+                    setSubmitted((x) =>
+                      [
+                        {
+                          currentImage,
+                          data,
+                          type: "submit",
+                        },
+                        ...x,
+                      ].filter((_, i) => i < 50)
+                    );
+                    next();
+                  })
                   .catch(setError);
               }}
             >

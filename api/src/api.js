@@ -215,7 +215,7 @@ module.exports = (app) => {
     const page = config.page[parseInt(id)];
 
     const sourceImagePath = path.join(page.source.image, file);
-    const ignoreImagePath = path.join(page.ignore, "image", file);
+    const ignoreImagePath = path.join(page.ignore, file);
     ensureDir(ignoreImagePath);
     fs.renameSync(sourceImagePath, ignoreImagePath);
 
@@ -228,6 +228,29 @@ module.exports = (app) => {
       );
       ensureDir(ignoreLabelPath);
       fs.renameSync(sourceLabelPath, ignoreLabelPath);
+    }
+
+    return okay(res);
+  });
+
+  app.post("/api/rewind", (req, res) => {
+    const { file, type, id } = req.body;
+    const page = config.page[parseInt(id)];
+
+    if (type === "ignore") {
+      const sourceImagePath = path.join(page.source.image, file);
+      const ignoreImagePath = path.join(page.ignore, file);
+      fs.renameSync(ignoreImagePath, sourceImagePath);
+    } else if (type === "submit") {
+      const sourceImagePath = path.join(page.source.image, file);
+      const targetImagePath = path.join(page.target, "image", file);
+      const targetLabelPath = path.join(
+        page.target,
+        "label",
+        ext(file, ".txt")
+      );
+      fs.renameSync(targetImagePath, sourceImagePath);
+      fs.unlinkSync(targetLabelPath);
     }
 
     return okay(res);
